@@ -259,8 +259,29 @@ def map_age_of_diabetes_diagnosis(val):
     else:
         return "other"
 
+demo_coded_columns = [
+    "Participant ID",
+    "Gender",
+    "Age in Years at Screening",
+    "Age in Months at Screening (0-24 months)",
+    "Race/Hispanic Origin",
+    "Age in Months at Exam (0-19 years)",
+    "Country of Birth",
+    "Citizenship Status",
+    "Length of Time in US",
+    "Education Level - Ages 6-19",
+    "Education Level - Adults 20+",
+    "Marital Status",
+    "Pregnancy Status at Exam",
+    "Annual Household Income",
+    "Annual Family Income",
+    "Ratio of Family Income to Poverty"
+]
 
-# DUFFY DO NOT EXIT THIS TAB JUST MINIMIZE IT PLEASE!!!!!!
-# THANK YOU KING
-# YOUR TAB IS STILL OPEN
-
+df_demographics["Citizenship Status"] = df_demographics["Citizenship Status"].map({
+    1: "Citizen",
+    2: "Not a citizen",
+    3: "Refused",
+    4: "Don't Know",
+    ".": "Missing"
+})
