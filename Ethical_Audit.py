@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 
 # upload the demographics data
 # df = pd.read_sas("DEMO_J.xpt")
@@ -21,6 +22,7 @@ df_diabetes = pd.read_sas("DIQ_J.xpt")
 
 # merge them using SEQN (which is participant ID)
 merged_df = pd.merge(df_demographics, df_diabetes, on="SEQN", how="inner")
+merged_df = merged_df.replace(".", np.nan)
 
 
 # check/show the resutls
@@ -240,9 +242,16 @@ diq_coded_columns = [
     ]
 
 # using the code map from the DIQ datset to rename outputs
-diq_code_map = dict.fromkeys([1, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33], "Yes/Information Given")
-diq_code_map.update({2: "No", 7: "Refused", 9: "Don't Know", ".": "Missing Information", 77: "Refused", 99: "Don't Know"})
-
+diq_coded_columns = dict.fromkeys([1, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33], "Yes/Information Given")
+diq_coded_columns.update({
+    2: "No", 
+    7: "Refused", 
+    9: "Don't Know", 
+    77: "Refused", 
+    99: "Don't Know"
+    })
+for col in diq_coded_columns:
+    merged_df[col] = merged_df[col].map(diq_coded_columns).fillna("missing")
 
 # code maping for "age when you where first told you have diabetes"
 def map_age_of_diabetes_diagnosis(val):
@@ -257,7 +266,7 @@ def map_age_of_diabetes_diagnosis(val):
     elif val == 999:
         return "don't know"
     else:
-        return "other"
+        return "out of range"
 
 demo_coded_columns = [
     "Participant ID",
@@ -278,10 +287,198 @@ demo_coded_columns = [
     "Ratio of Family Income to Poverty"
 ]
 
-df_demographics["Citizenship Status"] = df_demographics["Citizenship Status"].map({
+# changing the coded values in the demographic data to reflect their actual meaning
+merged_df["Citizenship Status"] = merged_df["Citizenship Status"].map({
     1: "Citizen",
     2: "Not a citizen",
     3: "Refused",
-    4: "Don't Know",
-    ".": "Missing"
-})
+    4: "Don't Know"
+}).fillna("Missing")
+
+merged_df["Gender"] = merged_df["Gender"].map({
+    1: "Male",
+    2: "Female"
+}).fillna("Missing")
+
+def map_age_during_screening(val):
+    if 1 <= val <= 79:
+        return val
+    elif val == 80:
+        return "80+"
+    elif pd.isna(val):
+        return "Missing"
+    else: 
+        return "out of range"
+    
+
+def age_in_months_at_screening(val):
+    if 0 <= val <= 24:
+        return val
+    elif pd.isna(val):
+        return "Missing"
+    else:
+        return "out of range"
+    
+merged_df["Race/Hispanic Origin"] = merged_df["Race/Hispanic Origin"].map({
+    1: "Mexican American",
+    2: "Other Hispanic",
+    3: "Non-Hispanic White",
+    4: "Non-Hispanic Black",
+    5: "Other Race (including multi-racial)"
+}).fillna("Missing")
+
+def age_in_months_at_exam(val):
+    if 0 <= val <= 239:
+        return val
+    elif pd.isna(val):
+        return "Missing"
+    else:
+        return "out of range"
+# am i fucking stupid this function (all of them? are not pulling data from where i want)
+
+def country_of_birth(val):
+    if val == 1:
+        return "born in the US"
+    elif val == 2:
+        return "others"
+    elif 77:
+        return "refused"
+    elif val == 99:
+        return "don't know"
+    elif pd.isna(val):
+        return "missing"
+    else:
+        return "out of range"
+    
+
+def citizenship_status(val):
+    if val == 1:
+        return "citizen of the US"
+    elif val == 2: 
+        return "not a citizen of the US"
+    elif val == 7:
+        return "refused"
+    elif val == 9:
+        return "don't know"
+    elif pd.isna(val):
+        return "missing"
+    else:
+        return "is out of range"
+    
+demo_column_maps = {
+    "Length of Time in US": {
+        1: "Less than one year",
+        2: "1 year or more (but less than 5)",
+        3: "5 years or more (but less than 10)",
+        4: "10 years or more (but less than 15 years)",
+        5: "15 years or more (but less than 20 years)",
+        6: "20 years or more (but less than 30 years)",
+        7: "30 years or more (but less than 40 years)",
+        8: "40 years or more (but less than 50 years)",
+        9: "50 years or more",
+        77: "refused",
+        99: "don't know"
+    },
+    "Education Level - Ages 6-19": {
+        0: "never attended/kindergarten only",
+        1: "1st grade",
+        2: "2nd grade",
+        3: "3rd grade",
+        4: "4th grade",
+        5: "5th grade",
+        6: "6th grade",
+        7: "7th grade",
+        8: "8th grade",
+        9: "9th grade",
+        10: "10th grade",
+        11: "11th grade",
+        12: "12 grade, no diploma",
+        13: "high school graduate",
+        14: "GED or equivalent",
+        15: "more than high school",
+        55: "less than 5th grade",
+        66: "less than 9th grade",
+        77: "refused",
+        99: "don't know",
+        # don't for get to add .isna("missing")
+    },
+    "Education Level - 20+": {
+        1: "less than 9th grade",
+        2: "9th-11th grade (includes grade 12 with no diploma)",
+        3: "high school graduate/GED or equivalent",
+        4: "some college or AA degree",
+        5: "college graduate or above",
+        7: "refused",
+        9: "don't know"
+    },
+    "Marital Status": {
+        1: "married",
+        2: "widowed",
+        3: "divorced",
+        4: "seperated",
+        5: "never married",
+        6: "living with partner",
+        77: "refused",
+        99: "don't know",
+    },
+    "Pregnancy Status at Exam": {
+        1: "positive lab pregnancy or self-reported pregnancy",
+        2: "not pregnant",
+        3: "cannot determine if participant is pregnant",
+    },
+    "Annual Household Income": {
+        1: "$0 to $4999",
+        2: "$5000 to $9999",
+        3: "$10000 to $14999",
+        4: "$15000 to $19999",
+        5: "$20000 to $24999",
+        6: "$25000 to $34999",
+        7: "$35000 to $44999",
+        8: "$45000 to $54999",
+        9: "$55000 to $64999",
+        10: "$65000 to $74999",
+        12: "$20000 and over",
+        13: "under $20000",
+        14: "$75000 to 99999",
+        15: "$100000 and over",
+        77: "refused",
+        99: "don't know"
+    },
+    "Annual Family Income": {
+        1: "$0 to $4999",
+        2: "$5000 to $9999",
+        3: "$10000 to $14999",
+        4: "$15000 to $19999",
+        5: "$20000 to $24999",
+        6: "$25000 to $34999",
+        7: "$35000 to $44999",
+        8: "$45000 to $54999",
+        9: "$55000 to $64999",
+        10: "$65000 to $74999",
+        12: "$20000 and over",
+        13: "under $20000",
+        14: "$75000 to 99999",
+        15: "$100000 and over",
+        77: "refused",
+        99: "don't know"
+    }
+}
+
+
+# for col in demo_column_maps.items():
+#     merged_df[col] = (
+#         merged_df[col]
+#         .map(mapping)
+#         .fillna("missing")
+    # )
+
+
+def income_to_poverty_ratio(val):
+    if 0 <= val <= 4.98:
+        return val
+    elif val == 5:
+        return "value greater than or equal to 5.00"
+    else:
+        return "out of range"
+    
+# test commit
