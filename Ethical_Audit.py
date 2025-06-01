@@ -242,16 +242,44 @@ diq_coded_columns = [
     ]
 
 # using the code map from the DIQ datset to rename outputs
-diq_coded_columns = dict.fromkeys([1, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33], "Yes/Information Given")
-diq_coded_columns.update({
-    2: "No", 
-    7: "Refused", 
-    9: "Don't Know", 
-    77: "Refused", 
+value_map = {
+    1: "Yes/Information Given",
+    10: "Yes/Information Given",
+    11: "Yes/Information Given",
+    12: "Yes/Information Given",
+    13: "Yes/Information Given",
+    14: "Yes/Information Given",
+    15: "Yes/Information Given",
+    16: "Yes/Information Given",
+    17: "Yes/Information Given",
+    18: "Yes/Information Given",
+    19: "Yes/Information Given",
+    20: "Yes/Information Given",
+    21: "Yes/Information Given",
+    22: "Yes/Information Given",
+    23: "Yes/Information Given",
+    24: "Yes/Information Given",
+    25: "Yes/Information Given",
+    26: "Yes/Information Given",
+    27: "Yes/Information Given",
+    28: "Yes/Information Given",
+    29: "Yes/Information Given",
+    30: "Yes/Information Given",
+    31: "Yes/Information Given",
+    32: "Yes/Information Given",
+    33: "Yes/Information Given",
+    2: "No",
+    7: "Refused",
+    9: "Don't Know",
+    77: "Refused",
     99: "Don't Know"
-    })
+}
+
+# mapping the diq data columns so they are strings not integers
 for col in diq_coded_columns:
-    merged_df[col] = merged_df[col].map(diq_coded_columns).fillna("missing")
+    merged_df[col] = merged_df[col].map(value_map).fillna("missing")
+print(merged_df[diq_coded_columns].head(10))
+
 
 # code maping for "age when you where first told you have diabetes"
 def map_age_of_diabetes_diagnosis(val):
@@ -267,6 +295,10 @@ def map_age_of_diabetes_diagnosis(val):
         return "don't know"
     else:
         return "out of range"
+
+# calling diabetes age of diagnosis function
+merged_df["Age when first told you had Diabetes"] = merged_df["Age when first told you had Diabetes"].apply(map_age_of_diabetes_diagnosis)
+
 
 demo_coded_columns = [
     "Participant ID",
@@ -341,7 +373,7 @@ def country_of_birth(val):
         return "born in the US"
     elif val == 2:
         return "others"
-    elif 77:
+    elif val == 77:
         return "refused"
     elif val == 99:
         return "don't know"
@@ -463,15 +495,7 @@ demo_column_maps = {
         99: "don't know"
     }
 }
-
-
-# for col in demo_column_maps.items():
-#     merged_df[col] = (
-#         merged_df[col]
-#         .map(mapping)
-#         .fillna("missing")
-    # )
-
+       
 
 def income_to_poverty_ratio(val):
     if 0 <= val <= 4.98:
@@ -480,5 +504,37 @@ def income_to_poverty_ratio(val):
         return "value greater than or equal to 5.00"
     else:
         return "out of range"
-    
+#  end of the diq coded columns being mapped from integers to strings
+
+
+# Apply custom functions
+merged_df["Age in Years at Screening"] = merged_df["Age in Years at Screening"].apply(map_age_during_screening)
+
+merged_df["Age in Months at Screening (0-24 months)"] = merged_df["Age in Months at Screening (0-24 months)"].apply(age_in_months_at_screening)
+
+merged_df["Age in Months at Exam (0-19 years)"] = merged_df["Age in Months at Exam (0-19 years)"].apply(age_in_months_at_exam)
+
+merged_df["Country of Birth"] = merged_df["Country of Birth"].apply(country_of_birth)
+
+merged_df["Citizenship Status"] = merged_df["Citizenship Status"].apply(citizenship_status)
+
+merged_df["Ratio of Family Income to Poverty"] = merged_df["Ratio of Family Income to Poverty"].apply(income_to_poverty_ratio)
+
+# Apply race mapping (already done earlier but repeating for clarity)
+merged_df["Race/Hispanic Origin"] = merged_df["Race/Hispanic Origin"].map({
+    1: "Mexican American",
+    2: "Other Hispanic",
+    3: "Non-Hispanic White",
+    4: "Non-Hispanic Black",
+    5: "Other Race (including multi-racial)"
+}).fillna("Missing")
+
+# Apply mappings for all demo-coded categorical columns
+for col, mapping in demo_column_maps.items():
+    if col in merged_df.columns:
+        merged_df[col] = merged_df[col].map(mapping).fillna("missing")
+
+print("All demo-coded columns processed!")
+print(merged_df[demo_coded_columns].head())
+
 # test commit
