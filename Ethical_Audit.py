@@ -21,8 +21,8 @@ df_demographics = pd.read_sas("DEMO_J.xpt")
 df_diabetes = pd.read_sas("DIQ_J.xpt")
 
 # merge them using SEQN (which is participant ID)
-merged_df = pd.merge(df_demographics, df_diabetes, on="SEQN", how="inner")
-merged_df = merged_df.replace(".", np.nan)
+df = pd.merge(df_demographics, df_diabetes, on="SEQN", how="left")
+df = df.replace(".", np.nan)
 
 
 # check/show the resutls
@@ -30,7 +30,7 @@ merged_df = merged_df.replace(".", np.nan)
 # print(df_merged.head())
 
 # finding demographic participants that HAVE NOT answered wether they have diabetes
-demographics_valid = merged_df[merged_df["DIQ010"].notna()]
+demographics_valid = df[df["DIQ010"].notna()]
 
 
 # count of the row with ACTUAL diabetes answers
@@ -58,8 +58,8 @@ hh_cols = [
     "DMDHRGND", "DMDHRAGZ", "DMDHREDZ", "DMDHRMAZ", "DMDHSEDZ"
     ]
 
-household_df = merged_df[["SEQN"] + [col for col in hh_cols if col in merged_df.columns]]
-merged_df = merged_df.drop(columns=[col for col in hh_cols if col in merged_df.columns])
+household_df = df[["SEQN"] + [col for col in hh_cols if col in df.columns]]
+df = df.drop(columns=[col for col in hh_cols if col in df.columns])
 
 # to merge the household variables back in later use:
 # merged_df = merged_df[["SEQN"] + [col for col in hh_cols if col in merged_df.columns]]
@@ -69,7 +69,7 @@ household_df.to_csv("household_variables_backup.csv", index=True)
 # to bring it back use:
 # household_df = pd.read_csv("household_variables_backup.csv")
 
-merged_df.to_csv("merged_df_backup.csv", index=False)
+df.to_csv("df_backup.csv", index=False)
 # im stopping at 3:15pm because I gotta get ready to see bethany and then go to work.... started cleaning some data by getting rid irrelevant columns; saved to CSV?
 
 drop_columns = [
@@ -101,12 +101,12 @@ drop_columns = [
 
 
 # dropping list of irrelevant columns
-merged_df = merged_df.drop(columns=drop_columns)
-print(merged_df.columns)
+df = df.drop(columns=drop_columns)
+# print(merged_df.columns)
 
 
 
-merged_df.rename(columns={
+df.rename(columns={
 # Demographics dataset being renamed
     "SEQN": "Participant ID",
     "RIAGENDR": "Gender",
@@ -153,16 +153,16 @@ merged_df.rename(columns={
     "DIQ175U": "Thirst",
     "DIQ175V": "Craving for Sweets/Eating a lot of Sugar",
     "DIQ175W": "Medication",
-    "DIQ175X": "Polycycstic Ovarian Syndrome",
+    "DIQ175X": "Polycystic Ovarian Syndrome",
     "DIQ180": "Had Blood Tested in the past Three Years"
 }, inplace=True)
 
 # print(merged_df.rename)
 
 # inspecting the merged and relevant data
-print(merged_df.head())
-print(merged_df.dtypes)
-print(merged_df.isnull().sum().sort_values(ascending=False))
+# print(merged_df.head())
+# print(merged_df.dtypes)
+# print(merged_df.isnull().sum().sort_values(ascending=False))
 
 
 # coded_columns = [
@@ -196,8 +196,8 @@ print(merged_df.isnull().sum().sort_values(ascending=False))
 
 
 # I was wanting to see the NHANES like responses
-for col in merged_df.columns:
-    print(f"{col}:\n", merged_df[col].value_counts(dropna=False), "\n")
+# for col in merged_df.columns:
+#     print(f"{col}:\n", merged_df[col].value_counts(dropna=False), "\n")
 
 # review this function 
 # def audit_column_distribution(df):
@@ -237,7 +237,7 @@ diq_coded_columns = [
     "Thirst",
     "Craving for Sweets/Eating a lot of Sugar",
     "Medication",
-    "Polycycstic Ovarian Syndrome",
+    "Polycystic Ovarian Syndrome",
     "Had Blood Tested in the past Three Years"
     ]
 
@@ -277,8 +277,7 @@ value_map = {
 
 # mapping the diq data columns so they are strings not integers
 for col in diq_coded_columns:
-    merged_df[col] = merged_df[col].map(value_map).fillna("missing")
-print(merged_df[diq_coded_columns].head(10))
+    df[col] = df[col].map(value_map).fillna("missing")
 
 
 # code maping for "age when you where first told you have diabetes"
@@ -293,11 +292,13 @@ def map_age_of_diabetes_diagnosis(val):
         return "refused"
     elif val == 999:
         return "don't know"
+    elif pd.isna(val):
+        return "missing"
     else:
         return "out of range"
 
 # calling diabetes age of diagnosis function
-merged_df["Age when first told you had Diabetes"] = merged_df["Age when first told you had Diabetes"].apply(map_age_of_diabetes_diagnosis)
+df["Age when first told you had Diabetes"] = df["Age when first told you had Diabetes"].apply(map_age_of_diabetes_diagnosis)
 
 
 demo_coded_columns = [
@@ -314,23 +315,23 @@ demo_coded_columns = [
     "Education Level - Adults 20+",
     "Marital Status",
     "Pregnancy Status at Exam",
-    "Annual Household Income",
-    "Annual Family Income",
+    # "Annual Household Income",
+    # "Annual Family Income",
     "Ratio of Family Income to Poverty"
 ]
 
 # changing the coded values in the demographic data to reflect their actual meaning
-merged_df["Citizenship Status"] = merged_df["Citizenship Status"].map({
+df["Citizenship Status"] = df["Citizenship Status"].map({
     1: "Citizen",
     2: "Not a citizen",
     3: "Refused",
     4: "Don't Know"
-}).fillna("Missing")
+}).fillna("missing")
 
-merged_df["Gender"] = merged_df["Gender"].map({
+df["Gender"] = df["Gender"].map({
     1: "Male",
     2: "Female"
-}).fillna("Missing")
+}).fillna("missing")
 
 def map_age_during_screening(val):
     if 1 <= val <= 79:
@@ -338,7 +339,7 @@ def map_age_during_screening(val):
     elif val == 80:
         return "80+"
     elif pd.isna(val):
-        return "Missing"
+        return "missing"
     else: 
         return "out of range"
     
@@ -347,23 +348,23 @@ def age_in_months_at_screening(val):
     if 0 <= val <= 24:
         return val
     elif pd.isna(val):
-        return "Missing"
+        return "missing"
     else:
         return "out of range"
     
-merged_df["Race/Hispanic Origin"] = merged_df["Race/Hispanic Origin"].map({
+df["Race/Hispanic Origin"] = df["Race/Hispanic Origin"].map({
     1: "Mexican American",
     2: "Other Hispanic",
     3: "Non-Hispanic White",
     4: "Non-Hispanic Black",
     5: "Other Race (including multi-racial)"
-}).fillna("Missing")
+}).fillna("missing")
 
 def age_in_months_at_exam(val):
     if 0 <= val <= 239:
         return val
     elif pd.isna(val):
-        return "Missing"
+        return "missing"
     else:
         return "out of range"
 # am i fucking stupid this function (all of them? are not pulling data from where i want)
@@ -502,39 +503,156 @@ def income_to_poverty_ratio(val):
         return val
     elif val == 5:
         return "value greater than or equal to 5.00"
+    elif pd.isna(val):
+        return "missing"
     else:
         return "out of range"
 #  end of the diq coded columns being mapped from integers to strings
 
 
 # Apply custom functions
-merged_df["Age in Years at Screening"] = merged_df["Age in Years at Screening"].apply(map_age_during_screening)
+df["Age in Years at Screening"] = df["Age in Years at Screening"].apply(map_age_during_screening)
+df["Age in Months at Screening (0-24 months)"] = df["Age in Months at Screening (0-24 months)"].apply(age_in_months_at_screening)
+df["Age in Months at Exam (0-19 years)"] = df["Age in Months at Exam (0-19 years)"].apply(age_in_months_at_exam)
+df["Country of Birth"] = df["Country of Birth"].apply(country_of_birth)
+df["Citizenship Status"] = df["Citizenship Status"].apply(citizenship_status)
+df["Ratio of Family Income to Poverty"] = df["Ratio of Family Income to Poverty"].apply(income_to_poverty_ratio)
 
-merged_df["Age in Months at Screening (0-24 months)"] = merged_df["Age in Months at Screening (0-24 months)"].apply(age_in_months_at_screening)
+# this is to make sure these columns stay as integers
+df["Annual Household Income"] = pd.to_numeric(df["Annual Household Income"], errors="coerce")
+df["Annual Family Income"] = pd.to_numeric(df["Annual Family Income"], errors="coerce")
 
-merged_df["Age in Months at Exam (0-19 years)"] = merged_df["Age in Months at Exam (0-19 years)"].apply(age_in_months_at_exam)
-
-merged_df["Country of Birth"] = merged_df["Country of Birth"].apply(country_of_birth)
-
-merged_df["Citizenship Status"] = merged_df["Citizenship Status"].apply(citizenship_status)
-
-merged_df["Ratio of Family Income to Poverty"] = merged_df["Ratio of Family Income to Poverty"].apply(income_to_poverty_ratio)
-
-# Apply race mapping (already done earlier but repeating for clarity)
-merged_df["Race/Hispanic Origin"] = merged_df["Race/Hispanic Origin"].map({
-    1: "Mexican American",
-    2: "Other Hispanic",
-    3: "Non-Hispanic White",
-    4: "Non-Hispanic Black",
-    5: "Other Race (including multi-racial)"
-}).fillna("Missing")
 
 # Apply mappings for all demo-coded categorical columns
 for col, mapping in demo_column_maps.items():
-    if col in merged_df.columns:
-        merged_df[col] = merged_df[col].map(mapping).fillna("missing")
+    if col in df.columns and "Income" not in col:
+        df[col] = df[col].map(mapping).fillna("missing")
 
 print("All demo-coded columns processed!")
-print(merged_df[demo_coded_columns].head())
+# print(merged_df[demo_coded_columns].head())
 
-# test commit
+# getting a feel for the data for like the 10th time
+# merged_df.shape
+# merged_df.head()
+# merged_df.info()
+# merged_df.describe(include="all")
+
+# ching for missing values
+df.isnull().sum().sort_values(ascending=False)
+missing_summary = df.isnull().sum().sort_values(ascending=False)
+print(missing_summary[missing_summary > 0])
+print((df == "missing").sum().sort_values(ascending=False))
+df = df.replace("missing", np.nan)
+
+
+# print(df_demographics.columns[df_demographics.columns.str.contains("Race", case=False)])
+# df_demographics[['SEQN', 'RIDRETH1']].head()  # RIDRETH1 is often used for race in NHANES
+
+# dropping duplicate columns
+df = df.loc[:, ~df.columns.duplicated()]
+
+# convert "missing" back to real NaN (why did I even do this to begin with)
+df = df.replace("missing", np.nan).infer_objects()
+
+# making column names normal
+df.columns = (
+    df.columns
+    .str.strip()
+    .str.lower()
+    .str.replace(" ", "_")
+)
+
+# convert numeric columns??? DOUBLE CHECK THIS
+# merged_df['age'] = pd.to_numeric(merged_df["age"], errors="coerce")
+
+df['gender'] = df['gender'].replace({
+    'M': 'Male', 'F': 'Female', 
+    'male': 'Male', 'female': 'Female',
+    'Missing': np.nan
+})
+
+
+# converting strings to numerical values
+df["annual_family_income"] = pd.to_numeric(df["annual_family_income"], errors="coerce")
+df["annual_household_income"] = pd.to_numeric(df["annual_household_income"], errors="coerce")
+df["ratio_of_family_income_to_poverty"] = pd.to_numeric(df["ratio_of_family_income_to_poverty"], errors="coerce")
+
+# I NEED TO STANDARDIZE CATEGORICAL COLUMNS RIPPPP
+
+# standardizing gender
+df['gender'] = df['gender'].replace({
+    'M': 'Male', 'F': 'Female', 'male': 'Male', 'female': 'Female',
+    'unknown': np.nan
+})
+
+# standardizing race WAIT SHOULD I EVEN STANDARDIZE THEM WILL THAT BIAS INTERPRETATION
+
+
+# I NEED TO FIGURE OUT HOW TO HANDLE MISSING VALUES
+
+
+# merged_df.to_csv('cleaned_data_final.csv', index=False)
+missing_percent = df.isna().mean().sort_values(ascending=False)
+print(missing_percent)
+
+
+# df_demographics['race_hispanic_origin'] = df_demographics['RIDRETH1'].map(race_map)
+
+# df = pd.merge(df_demographics[['SEQN', 'race_hispanic_origin']], df, on='SEQN', how='right')
+
+
+# checking if columns that were over 60% empty were conditionally skipped
+def conditional_missing_audit(df, columns, condition_col):
+    for col in columns:
+        try:
+            result = df.groupby(condition_col).apply(lambda g: g[col].isna().mean())
+            print(f"\n--- {col} ---")
+            print(result.sort_index())
+        except KeyError:
+            print(f"Column not found: {col}")
+
+
+columns_to_check = [
+    "polycystic_ovarian_syndrome", "medication", "craving_for_sweets/eating_a_lot_of_sugar",
+    "other,_specify", "hypoglycemic", "gestational_diabetes", "had_a_baby_weigh_over_9lbs_at_birth",
+    "extreme_hunger", "high_blood_sugar", "blurred_vision", "thirst", "frequent_urination",
+    "anyone_could_be_at_risk", "tingling/numbness_in_hands_or_feet", "high_cholestrol",
+    "increased_fatigue", "doctor_warning", "race", "age", "high_blood_pressure",
+    "lack_of_physical_activity", "poor_diet", "overweight", "age_when_first_told_you_had_diabetes",
+    "pregnancy_status_at_exam", "family_history"
+]
+
+# Run the audit
+conditional_missing_audit(df, columns_to_check, "doctor_said_you_have_diabetes")
+
+# Example for DIQ175A (Family History)
+print(df_diabetes["DIQ175A"].value_counts(dropna=False))
+# Compare before/after mapping
+print("Original DIQ175X codes:")
+print(df_diabetes["DIQ175X"].value_counts(dropna=False))
+
+print("\nAfter renaming/mapping:")
+print(df["polycystic_ovarian_syndrome"].value_counts(dropna=False))
+
+
+# === ETHICAL AUDIT COMMENT: DIABETES FOLLOW-UP QUESTIONS ===
+#
+# Goal: To audit whether follow-up diabetes questions (like symptoms, risk factors, etc.)
+#       were conditionally skipped based on the participant's response to
+#       "Doctor said you have Diabetes" (DIQ010).
+#
+# Approach:
+# - Used group-wise missingness checks (via groupby + isna().mean()) to determine if
+#   fields were skipped by design.
+# - Found that even for participants who answered "Yes/Information Given" to DIQ010,
+#   many follow-up fields (e.g., polycystic_ovarian_syndrome) still showed 100% missing.
+#
+# Diagnosis:
+# - Verified that some columns (e.g., DIQ175X) had almost no valid responses even in raw data.
+# - .map() and .replace() operations likely erased valid but unmapped values.
+# - NHANES skip logic may limit questions to subgroups (e.g., only females, only adults).
+#
+# Status:
+# - Audit logic worked correctly.
+# - Missingness appears to be driven by a mix of skip patterns AND data loss during transformation.
+# - Will pause further deep dive for now and revisit with fresh eyes.
