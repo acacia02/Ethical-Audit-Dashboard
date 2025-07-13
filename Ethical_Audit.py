@@ -509,7 +509,7 @@ def income_to_poverty_ratio(val):
         return "out of range"
 #  end of the diq coded columns being mapped from integers to strings
 
-
+# SWITCH .APPLY TO .MAP
 # Apply custom functions
 df["Age in Years at Screening"] = df["Age in Years at Screening"].apply(map_age_during_screening)
 df["Age in Months at Screening (0-24 months)"] = df["Age in Months at Screening (0-24 months)"].apply(age_in_months_at_screening)
@@ -538,18 +538,18 @@ print("All demo-coded columns processed!")
 # merged_df.describe(include="all")
 
 # ching for missing values
-df.isnull().sum().sort_values(ascending=False)
-missing_summary = df.isnull().sum().sort_values(ascending=False)
-print(missing_summary[missing_summary > 0])
-print((df == "missing").sum().sort_values(ascending=False))
-df = df.replace("missing", np.nan)
+# df.isnull().sum().sort_values(ascending=False)
+# missing_summary = df.isnull().sum().sort_values(ascending=False)
+# print(missing_summary[missing_summary > 0])
+# print((df == "missing").sum().sort_values(ascending=False))
+# df = df.replace("missing", np.nan)
 
 
 # print(df_demographics.columns[df_demographics.columns.str.contains("Race", case=False)])
 # df_demographics[['SEQN', 'RIDRETH1']].head()  # RIDRETH1 is often used for race in NHANES
 
 # dropping duplicate columns
-df = df.loc[:, ~df.columns.duplicated()]
+df = df.T.drop_duplicates().T
 
 # convert "missing" back to real NaN (why did I even do this to begin with)
 df = df.replace("missing", np.nan).infer_objects()
@@ -566,8 +566,10 @@ df.columns = (
 # merged_df['age'] = pd.to_numeric(merged_df["age"], errors="coerce")
 
 df['gender'] = df['gender'].replace({
-    'M': 'Male', 'F': 'Female', 
-    'male': 'Male', 'female': 'Female',
+    'M': 'Male', 
+    'F': 'Female', 
+    'male': 'Male', 
+    'female': 'Female',
     'Missing': np.nan
 })
 
@@ -592,8 +594,8 @@ df['gender'] = df['gender'].replace({
 
 
 # merged_df.to_csv('cleaned_data_final.csv', index=False)
-missing_percent = df.isna().mean().sort_values(ascending=False)
-print(missing_percent)
+# missing_percent = df.isna().mean().sort_values(ascending=False)
+# print(missing_percent)
 
 
 # df_demographics['race_hispanic_origin'] = df_demographics['RIDRETH1'].map(race_map)
@@ -617,22 +619,20 @@ columns_to_check = [
     "other,_specify", "hypoglycemic", "gestational_diabetes", "had_a_baby_weigh_over_9lbs_at_birth",
     "extreme_hunger", "high_blood_sugar", "blurred_vision", "thirst", "frequent_urination",
     "anyone_could_be_at_risk", "tingling/numbness_in_hands_or_feet", "high_cholestrol",
-    "increased_fatigue", "doctor_warning", "race", "age", "high_blood_pressure",
-    "lack_of_physical_activity", "poor_diet", "overweight", "age_when_first_told_you_had_diabetes",
-    "pregnancy_status_at_exam", "family_history"
+    "increased_fatigue", "doctor_warning", "race", "age" 
 ]
 
 # Run the audit
-conditional_missing_audit(df, columns_to_check, "doctor_said_you_have_diabetes")
+# conditional_missing_audit(df, columns_to_check, "doctor_said_you_have_diabetes")
 
-# Example for DIQ175A (Family History)
-print(df_diabetes["DIQ175A"].value_counts(dropna=False))
-# Compare before/after mapping
-print("Original DIQ175X codes:")
-print(df_diabetes["DIQ175X"].value_counts(dropna=False))
+# # Example for DIQ175A (Family History)
+# print(df_diabetes["DIQ175A"].value_counts(dropna=False))
+# # Compare before/after mapping
+# print("Original DIQ175X codes:")
+# print(df_diabetes["DIQ175X"].value_counts(dropna=False))
 
-print("\nAfter renaming/mapping:")
-print(df["polycystic_ovarian_syndrome"].value_counts(dropna=False))
+# print("\nAfter renaming/mapping:")
+# print(df["polycystic_ovarian_syndrome"].value_counts(dropna=False))
 
 
 # === ETHICAL AUDIT COMMENT: DIABETES FOLLOW-UP QUESTIONS ===
@@ -656,3 +656,81 @@ print(df["polycystic_ovarian_syndrome"].value_counts(dropna=False))
 # - Audit logic worked correctly.
 # - Missingness appears to be driven by a mix of skip patterns AND data loss during transformation.
 # - Will pause further deep dive for now and revisit with fresh eyes.
+
+
+# was_asked_followups = df["doctor_said_you_have_diabetes"] == "Yes/Information Given"
+# print(was_asked_followups)
+
+# saving cleaned dataset
+df.to_csv("nhanes_diabetes_cleaned.csv", index=False)
+
+
+# "high_blood_pressure",
+    # "lack_of_physical_activity", "poor_diet", "overweight", "age_when_first_told_you_had_diabetes",
+    # "pregnancy_status_at_exam", "family_history"
+
+# dropping columns that are empty and not important (diabetes diagnosis)
+df.drop(columns=columns_to_check, inplace=True)
+
+# these are columns to be investigated because they are 80-90% empty
+# they may have been skipped based on age or gender
+columns_to_review = [
+    "high_blood_pressure",
+    "lack_of_physical_activity",
+    "poor_diet",
+    "age_in_months_at_screening_(0-24_months)",
+    "overweight",
+    "age_when_first_told_you_had_diabetes",
+    "pregnancy_status_at_exam",
+    "family_history"
+]
+
+# KEEP FAMILY HISTORY and PREGNANCY STATUS AT EXAM (and drop everything else?)
+
+# columns to fill (less than 40% missing and important)
+numerical_to_fill = [
+    "annual_household_income",
+    "annual_family_income",
+    "ratio_of_family_income_to_poverty"
+]
+
+for col in numerical_to_fill:
+    df[col] = df[col].fillna(df[col].median())
+
+# Optional categorical imputation
+categorical_to_fill = [
+    "education_level_-_adults_20+",
+    "marital_status",
+    "ever_told_you_have_prediabtes",
+    "ever_told_you_have_health_risk_for_diabetes",
+    "had_blood_tested_in_the_past_three_years",
+    "feel_they_could_be_at_risk_for_diabetes"
+]
+
+# should I keep this????? THINK ABOUT IT 
+for col in categorical_to_fill:
+    df[col] = df[col].fillna("Missing")
+
+
+# LOCK IN BITCH. HERE ARE THE NEXT STEPS:
+# 1. detect and handle outliters
+# 2. set correct data types
+# 3. explore the data
+# 4. prepare for modeling
+
+def detect_outliers_iqr(df, column):
+    Q1 = df[column].quantile(0.25)
+    Q3 = df[column].quantile(0.75)
+    IQR = Q3 - Q1
+    lower = Q1 - 1.5 * IQR
+    upper = Q3 + 1.5 * IQR
+
+    outliers = df[(df[column] < lower) | (df[column] > upper)]
+    
+    print(f"\n{column} — Outliers Found: {len(outliers)}")
+    print(f"Lower bound: {lower:.2f}, Upper bound: {upper:.2f}")
+    print(f"Min: {df[column].min()}, Max: {df[column].max()}")
+    
+    return outliers
+
+detect_outliers_iqr(df, "annual_household_income")
