@@ -1,19 +1,6 @@
 import pandas as pd
 import numpy as np
-
-# upload the demographics data
-# df = pd.read_sas("DEMO_J.xpt")
-
-# print(df.info())
-# print(df.head())
-# getting the initial and basic info
-
-# print(df.columns)
-# see all column names
-
-
-# print(df.isnull().sum())
-# checking for missing values
+import matplotlib.pyplot as plt
 
 
 # Loading the demographic AND diabetes datasets
@@ -25,31 +12,8 @@ df = pd.merge(df_demographics, df_diabetes, on="SEQN", how="left")
 df = df.replace(".", np.nan)
 
 
-# check/show the resutls
-# print(merged_df.info())
-# print(df_merged.head())
-
 # finding demographic participants that HAVE NOT answered wether they have diabetes
 demographics_valid = df[df["DIQ010"].notna()]
-
-
-# count of the row with ACTUAL diabetes answers
-# print(merged_df["DIQ010"].notna().sum())
-
-# checking the shape of (the layout) of the demographics and diabetes data and then seeing the overlap between the two (I can probably get rid of this)
-# print(df_demographics.shape)
-# print(df_diabetes.shape)
-# print(merged_df.shape)
-# print(merged_df["SEQN"].nunique())
-
-# print(df_diabetes.head())
-
-# renaming variables
-
-# print(merged_df.columns.tolist())
-
-
-# IT WAS RIGHT HERE THAT I DID THE DROP COLUMNS
 
 
 # slicing out the household variables 
@@ -61,8 +25,6 @@ hh_cols = [
 household_df = df[["SEQN"] + [col for col in hh_cols if col in df.columns]]
 df = df.drop(columns=[col for col in hh_cols if col in df.columns])
 
-# to merge the household variables back in later use:
-# merged_df = merged_df[["SEQN"] + [col for col in hh_cols if col in merged_df.columns]]
 
 # saving sliced data so that I can use it again
 household_df.to_csv("household_variables_backup.csv", index=True)
@@ -95,15 +57,9 @@ drop_columns = [
     "WTMEC2YR", "WTINT2YR"
 ]
 
-# checking which columns are missing in the drop_columns in the merged_df
-# missing_columns = [col for col in drop_columns if col not in merged_df.columns]
-# print(missing_columns)
-
-
 # dropping list of irrelevant columns
 df = df.drop(columns=drop_columns)
 # print(merged_df.columns)
-
 
 
 df.rename(columns={
@@ -156,56 +112,6 @@ df.rename(columns={
     "DIQ175X": "Polycystic Ovarian Syndrome",
     "DIQ180": "Had Blood Tested in the past Three Years"
 }, inplace=True)
-
-# print(merged_df.rename)
-
-# inspecting the merged and relevant data
-# print(merged_df.head())
-# print(merged_df.dtypes)
-# print(merged_df.isnull().sum().sort_values(ascending=False))
-
-
-# coded_columns = [
-    # "Doctor said you have Diabetes",
-    # "Ever told you have Prediabtes",
-    # "Ever told you have Health Risk for Diabetes",
-    # "Feel they could be at risk for Diabetes",
-    # "Had Blood Tested in the past Three Years"
-
-# ]
-
-# code_map = {
-    # 1: "Yes",
-    # 2: "No",
-    # 3: "Borderline",
-    # 7: "Refused",
-    # 9: "Don't Know",
-    # ".": "Missing"
-# }
-
-# converting to integers first (some may be float)
-# for col in coded_columns:
-#     if col in merged_df.columns:
-#         # making errors apear as N/A and making the type Int64 which can handle N/As
-#         merged_df[col] = pd.to_numeric(merged_df[col], errors="coerce").astype("Int64") 
-#         # maping the coded_columns to the code map and reassigning values
-#         merged_df[col] = merged_df[col].map(code_map)
-#         # replacing certain values? check this
-#         merged_df[col] = merged_df[col].replace(["Refused", "Don't Know"], "Unknown")
-
-
-
-# I was wanting to see the NHANES like responses
-# for col in merged_df.columns:
-#     print(f"{col}:\n", merged_df[col].value_counts(dropna=False), "\n")
-
-# review this function 
-# def audit_column_distribution(df):
-#     for col in merged_df:
-#         print(f"=== {col} ===")
-#         print(df[col].value_counts(dropna=False))
-#         print("\n")
-
 
 
 # coverting all the DIQ data into yes, no and missing (n/a) values
@@ -531,23 +437,6 @@ for col, mapping in demo_column_maps.items():
 print("All demo-coded columns processed!")
 # print(merged_df[demo_coded_columns].head())
 
-# getting a feel for the data for like the 10th time
-# merged_df.shape
-# merged_df.head()
-# merged_df.info()
-# merged_df.describe(include="all")
-
-# ching for missing values
-# df.isnull().sum().sort_values(ascending=False)
-# missing_summary = df.isnull().sum().sort_values(ascending=False)
-# print(missing_summary[missing_summary > 0])
-# print((df == "missing").sum().sort_values(ascending=False))
-# df = df.replace("missing", np.nan)
-
-
-# print(df_demographics.columns[df_demographics.columns.str.contains("Race", case=False)])
-# df_demographics[['SEQN', 'RIDRETH1']].head()  # RIDRETH1 is often used for race in NHANES
-
 # dropping duplicate columns
 df = df.T.drop_duplicates().T
 
@@ -593,16 +482,6 @@ df['gender'] = df['gender'].replace({
 # I NEED TO FIGURE OUT HOW TO HANDLE MISSING VALUES
 
 
-# merged_df.to_csv('cleaned_data_final.csv', index=False)
-# missing_percent = df.isna().mean().sort_values(ascending=False)
-# print(missing_percent)
-
-
-# df_demographics['race_hispanic_origin'] = df_demographics['RIDRETH1'].map(race_map)
-
-# df = pd.merge(df_demographics[['SEQN', 'race_hispanic_origin']], df, on='SEQN', how='right')
-
-
 # checking if columns that were over 60% empty were conditionally skipped
 def conditional_missing_audit(df, columns, condition_col):
     for col in columns:
@@ -625,49 +504,10 @@ columns_to_check = [
 # Run the audit
 # conditional_missing_audit(df, columns_to_check, "doctor_said_you_have_diabetes")
 
-# # Example for DIQ175A (Family History)
-# print(df_diabetes["DIQ175A"].value_counts(dropna=False))
-# # Compare before/after mapping
-# print("Original DIQ175X codes:")
-# print(df_diabetes["DIQ175X"].value_counts(dropna=False))
-
-# print("\nAfter renaming/mapping:")
-# print(df["polycystic_ovarian_syndrome"].value_counts(dropna=False))
-
-
-# === ETHICAL AUDIT COMMENT: DIABETES FOLLOW-UP QUESTIONS ===
-#
-# Goal: To audit whether follow-up diabetes questions (like symptoms, risk factors, etc.)
-#       were conditionally skipped based on the participant's response to
-#       "Doctor said you have Diabetes" (DIQ010).
-#
-# Approach:
-# - Used group-wise missingness checks (via groupby + isna().mean()) to determine if
-#   fields were skipped by design.
-# - Found that even for participants who answered "Yes/Information Given" to DIQ010,
-#   many follow-up fields (e.g., polycystic_ovarian_syndrome) still showed 100% missing.
-#
-# Diagnosis:
-# - Verified that some columns (e.g., DIQ175X) had almost no valid responses even in raw data.
-# - .map() and .replace() operations likely erased valid but unmapped values.
-# - NHANES skip logic may limit questions to subgroups (e.g., only females, only adults).
-#
-# Status:
-# - Audit logic worked correctly.
-# - Missingness appears to be driven by a mix of skip patterns AND data loss during transformation.
-# - Will pause further deep dive for now and revisit with fresh eyes.
-
-
-# was_asked_followups = df["doctor_said_you_have_diabetes"] == "Yes/Information Given"
-# print(was_asked_followups)
 
 # saving cleaned dataset
 df.to_csv("nhanes_diabetes_cleaned.csv", index=False)
 
-
-# "high_blood_pressure",
-    # "lack_of_physical_activity", "poor_diet", "overweight", "age_when_first_told_you_had_diabetes",
-    # "pregnancy_status_at_exam", "family_history"
 
 # dropping columns that are empty and not important (diabetes diagnosis)
 df.drop(columns=columns_to_check, inplace=True)
@@ -718,19 +558,53 @@ for col in categorical_to_fill:
 # 3. explore the data
 # 4. prepare for modeling
 
-def detect_outliers_iqr(df, column):
-    Q1 = df[column].quantile(0.25)
-    Q3 = df[column].quantile(0.75)
-    IQR = Q3 - Q1
-    lower = Q1 - 1.5 * IQR
-    upper = Q3 + 1.5 * IQR
+# print(df.select_dtypes(include=["number"]).columns)
+# dropping rows below a 0.01 threshold
+df.loc[df["ratio_of_family_income_to_poverty"] <= 0.01, "ratio_of_family_income_to_poverty"] = np.nan
+df[df['ratio_of_family_income_to_poverty'] < 0.01]
 
-    outliers = df[(df[column] < lower) | (df[column] > upper)]
-    
-    print(f"\n{column} — Outliers Found: {len(outliers)}")
-    print(f"Lower bound: {lower:.2f}, Upper bound: {upper:.2f}")
-    print(f"Min: {df[column].min()}, Max: {df[column].max()}")
-    
-    return outliers
+# checking outliers for ratio of family income to poverty
+def create_outlier_flags(df):
+    cols_to_check = [
+        "ratio_of_family_income_to_poverty"
+    ]
+    outlier_flags = pd.DataFrame(index=df.index)
 
-detect_outliers_iqr(df, "annual_household_income")
+    for col in cols_to_check:
+        Q1 = df[col].quantile(0.25)
+        Q3 = df[col].quantile(0.75)
+        IQR = Q3 - Q1
+        lower = Q1 - 1.5 * IQR
+        upper = Q3 + 1.5 * IQR
+
+        outlier_flags[f"{col}_outlier"] = (df[col] < lower) | (df[col] > upper)
+
+        # print(f"\n{col} — Outliers Found: {outlier_flags[f'{col}_outlier'].sum()}")
+        # print(f"Bounds: {lower:.2f} to {upper:.2f}")
+        # print(f"Min: {df[col].min()}, Max: {df[col].max()}")
+
+    return outlier_flags
+
+flag = create_outlier_flags(df)
+# print(flag.sum())
+
+
+# Age in months at exam
+# plt.hist(df['age_in_months_at_exam_(0-19_years)'].dropna(), bins=150)
+# plt.title("Age at Exam Distribution (0–228 months)")
+# plt.xlabel("Age (months)")
+# plt.ylabel("Count")
+# plt.show()
+
+
+# replacing extremely low numbers with 0 (cleaning for future use)
+df.loc[df["age_in_months_at_screening_(0-24_months)"] < 0.01, "age_in_months_at_screening_(0-24_months)"] = 0
+
+# print((df["age_in_months_at_exam_(0-19_years)"] == 0).sum())
+# print((df["age_in_months_at_exam_(0-19_years)"] < 0.01).sum())
+
+# replacing extremely low numbers with 0 (for cleaning purposes)
+df.loc[df["age_in_months_at_exam_(0-19_years)"] < 0.01, "age_in_months_at_exam_(0-19_years)"] = 0
+
+# VALUES LESS THAN 0.01 MONTHS WERE RECODED TO 0 TO REFLECT REAL-WORLD NEWBORN AGES AND IMPROVE INTERPRETABILITY
+      
