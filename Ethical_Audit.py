@@ -263,7 +263,7 @@ df["Race/Hispanic Origin"] = df["Race/Hispanic Origin"].map({
     2: "Other Hispanic",
     3: "Non-Hispanic White",
     4: "Non-Hispanic Black",
-    5: "Other Race (including multi-racial)"
+    5: "Other/Multiracial"
 }).fillna("missing")
 
 def age_in_months_at_exam(val):
@@ -279,11 +279,9 @@ def country_of_birth(val):
     if val == 1:
         return "born in the US"
     elif val == 2:
-        return "others"
-    elif val == 77:
-        return "refused"
-    elif val == 99:
-        return "don't know"
+        return "born outside the US"
+    elif val == 77 or 99:
+        return "unknown"
     elif pd.isna(val):
         return "missing"
     else:
@@ -291,14 +289,12 @@ def country_of_birth(val):
     
 
 def citizenship_status(val):
-    if val == 1:
+    if val == 1.0:
         return "citizen of the US"
-    elif val == 2: 
+    elif val == 2.0: 
         return "not a citizen of the US"
-    elif val == 7:
-        return "refused"
-    elif val == 9:
-        return "don't know"
+    elif val in [7.0, 9.0]:
+        return "unknown"
     elif pd.isna(val):
         return "missing"
     else:
@@ -607,4 +603,18 @@ df.loc[df["age_in_months_at_screening_(0-24_months)"] < 0.01, "age_in_months_at_
 df.loc[df["age_in_months_at_exam_(0-19_years)"] < 0.01, "age_in_months_at_exam_(0-19_years)"] = 0
 
 # VALUES LESS THAN 0.01 MONTHS WERE RECODED TO 0 TO REFLECT REAL-WORLD NEWBORN AGES AND IMPROVE INTERPRETABILITY
-      
+
+# for col in df.columns:
+#     print(col)
+
+# note that for the race/hispanic origin column "other race" and "other hispanic" are both heterogeneous (can obscure subgroup differences)
+# ACKNOWLEDGE THIS LIMITATION
+
+# print(df["citizenship_status"].value_counts(dropna=False))
+# print(df["citizenship_status"].unique())
+
+df = pd.read_csv("merged_df_backup.csv")
+
+# print(df.columns.tolist())
+print(df["DMDCITZN"].unique())
+print(df["DMDCITZN"].dtype)
