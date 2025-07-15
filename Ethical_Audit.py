@@ -227,12 +227,12 @@ demo_coded_columns = [
 ]
 
 # changing the coded values in the demographic data to reflect their actual meaning
-df["Citizenship Status"] = df["Citizenship Status"].map({
-    1: "Citizen",
-    2: "Not a citizen",
-    3: "Refused",
-    4: "Don't Know"
-}).fillna("missing")
+# df["Citizenship Status"] = df["Citizenship Status"].map({
+#     1: "Citizen",
+#     2: "Not a citizen",
+#     3: "Refused",
+#     4: "Don't Know"
+# }).fillna("missing")
 
 df["Gender"] = df["Gender"].map({
     1: "Male",
@@ -311,8 +311,8 @@ demo_column_maps = {
         7: "30 years or more (but less than 40 years)",
         8: "40 years or more (but less than 50 years)",
         9: "50 years or more",
-        77: "refused",
-        99: "don't know"
+        77: "unknown",
+        99: "unknown"
     },
     "Education Level - Ages 6-19": {
         0: "never attended/kindergarten only",
@@ -333,18 +333,18 @@ demo_column_maps = {
         15: "more than high school",
         55: "less than 5th grade",
         66: "less than 9th grade",
-        77: "refused",
-        99: "don't know",
+        77: "unknown",
+        99: "unknown",
         # don't for get to add .isna("missing")
     },
-    "Education Level - 20+": {
+    "Education Level - Adults 20+": {
         1: "less than 9th grade",
         2: "9th-11th grade (includes grade 12 with no diploma)",
         3: "high school graduate/GED or equivalent",
         4: "some college or AA degree",
         5: "college graduate or above",
-        7: "refused",
-        9: "don't know"
+        7: "unknown",
+        9: "unknown"
     },
     "Marital Status": {
         1: "married",
@@ -601,7 +601,10 @@ df.loc[df["age_in_months_at_screening_(0-24_months)"] < 0.01, "age_in_months_at_
 
 # replacing extremely low numbers with 0 (for cleaning purposes)
 df.loc[df["age_in_months_at_exam_(0-19_years)"] < 0.01, "age_in_months_at_exam_(0-19_years)"] = 0
+print(df.columns.tolist())
 
+
+# ]
 # VALUES LESS THAN 0.01 MONTHS WERE RECODED TO 0 TO REFLECT REAL-WORLD NEWBORN AGES AND IMPROVE INTERPRETABILITY
 
 # for col in df.columns:
@@ -613,8 +616,38 @@ df.loc[df["age_in_months_at_exam_(0-19_years)"] < 0.01, "age_in_months_at_exam_(
 # print(df["citizenship_status"].value_counts(dropna=False))
 # print(df["citizenship_status"].unique())
 
-df = pd.read_csv("merged_df_backup.csv")
+# # df = pd.read_csv("merged_df_backup.csv")
 
 # print(df.columns.tolist())
-print(df["DMDCITZN"].unique())
-print(df["DMDCITZN"].dtype)
+# print(df["DMDCITZN"].unique())
+# print(df["DMDCITZN"].dtype)
+# def clean_citizenship(val):
+#     if val == 1:
+#         return "citizen of the US"
+#     elif val == 2:
+#         return "not a citizen of the US"
+#     elif val in [7, 9]:
+#         return "unknown"
+#     elif pd.isna(val):
+#         return "missing"
+#     else:
+#         return "out of range"
+
+
+# # Load backup CSV
+# df = pd.read_csv("merged_df_backup.csv")
+
+# # Apply cleaning function
+# df['citizenship_status_cleaned'] = df['DMDCITZN'].apply(clean_citizenship)
+
+# # Check the output
+# print(df['citizenship_status_cleaned'].value_counts(dropna=False))
+
+
+
+# OKAY GOING THROUGH AND LOOKING AT THE DISTRIBUTION AND OUTLIERS
+# print(df["country_of_birth"].value_counts(dropna=False))
+# print(df["citizenship_status"].value_counts(dropna=False))
+# print(df['length_of_time_in_us'].value_counts(dropna=False))
+# print(df["education_level_-_ages_6-19"].value_counts(dropna=False))
+# print(df["education_level_-_adults_20+"].value_counts(dropna=False))
