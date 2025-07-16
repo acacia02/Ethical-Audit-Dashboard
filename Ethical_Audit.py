@@ -612,9 +612,10 @@ df.loc[df["age_in_months_at_exam_(0-19_years)"] < 0.01, "age_in_months_at_exam_(
 
 # print(df["citizenship_status"].value_counts(dropna=False))
 # print(df["citizenship_status"].unique())
-
-df = pd.read_csv("merged_df_backup.csv")
+print("script ran")
+# df = pd.read_csv("merged_df_backup.csv")
 
 # print(df.columns.tolist())
-print(df["DMDCITZN"].unique())
-print(df["DMDCITZN"].dtype)
+# print(df["DMDCITZN"].unique())
+# print(df["DMDCITZN"].dtype)
+# print(df.columns.tolist())
